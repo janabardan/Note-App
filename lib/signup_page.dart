@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'main.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({Key? key}) : super(key: key);
@@ -35,12 +34,6 @@ class _SignupPageState extends State<SignupPage> {
       if (_nameController.text.isNotEmpty) {
         await userCredential.user!.updateDisplayName(_nameController.text.trim());
       }
-
-      // Navigate to login page after successful registration
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage(title: 'Notes App')),
-      );
     } catch (e) {
       _showSnackbar('Registration error: $e');
     } finally {
