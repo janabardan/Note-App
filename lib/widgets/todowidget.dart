@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
+import '../notes.dart';
 
 class ToDoItem extends StatefulWidget {
   final String? text;
   final bool check;
-  final ValueChanged<bool>? onChanged; // Define onChanged callback
+  final ValueChanged<bool>? onChanged;
+  final String todoId;
+  final Function(String) onDelete;
+  final Function(String, String) onEdit;
 
-  ToDoItem({Key? key, this.text, this.check = false, this.onChanged}) : super(key: key);
+  ToDoItem({
+    Key? key,
+    this.text,
+    this.check = false,
+    this.onChanged,
+    required this.todoId,
+    required this.onDelete,
+    required this.onEdit,
+  }) : super(key: key);
 
   @override
   _ToDoItemState createState() => _ToDoItemState();
@@ -29,7 +41,7 @@ class _ToDoItemState extends State<ToDoItem> {
         onTap: () {
           setState(() {
             _isChecked = !_isChecked;
-            if (widget.onChanged != null) { // Call onChanged callback if provided
+            if (widget.onChanged != null) {
               widget.onChanged!(_isChecked);
             }
           });
@@ -43,7 +55,7 @@ class _ToDoItemState extends State<ToDoItem> {
           color: Colors.blue,
         ),
         title: Text(
-          widget.text ?? 'Default Value', // Provide a default value if widget.text is null
+          widget.text ?? 'Default Value',
           style: TextStyle(
             fontSize: 16,
             color: Colors.black,
@@ -64,7 +76,7 @@ class _ToDoItemState extends State<ToDoItem> {
                 iconSize: 18,
                 icon: Icon(Icons.edit),
                 onPressed: () {
-                  // Add your edit logic here
+                  _editToDoItem(context);
                 },
               ),
             ),
@@ -80,13 +92,47 @@ class _ToDoItemState extends State<ToDoItem> {
                 iconSize: 18,
                 icon: Icon(Icons.delete),
                 onPressed: () {
-                  // Add your delete logic here
+                  widget.onDelete(widget.todoId);
                 },
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _editToDoItem(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String newText = widget.text ?? '';
+        return AlertDialog(
+          title: Text("Edit To-Do Item"),
+          content: TextFormField(
+            initialValue: newText,
+            onChanged: (value) {
+              newText = value;
+            },
+            decoration: InputDecoration(labelText: 'New Text'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                widget.onEdit(widget.todoId, newText);
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
