@@ -14,6 +14,21 @@ class _NoteInputFormState extends State<NoteInputForm> {
   TextEditingController _titleEditingController = TextEditingController();
   FirebaseAuth _auth = FirebaseAuth.instance;
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  void _deleteNote(String noteId) async {
+    await FirebaseFirestore.instance
+        .collection('notes')
+        .doc(noteId)
+        .delete();
+  }
+  void _updateNote(String noteId, String newTitle, String newText) async {
+    await FirebaseFirestore.instance
+        .collection('notes')
+        .doc(noteId)
+        .update({
+      'title': newTitle,
+      'content': newText,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +43,7 @@ class _NoteInputFormState extends State<NoteInputForm> {
               width: 45,
               child: ClipRRect(
                 borderRadius: BorderRadius.zero,
-                child: Image.asset('../assets/images/image2.jpg'),
+                child: Image.asset('../assets/images.jpg'),
               ),
             ),
           ],
@@ -64,6 +79,9 @@ class _NoteInputFormState extends State<NoteInputForm> {
                     noteWidgets.add(NoteItem(
                       title: noteData['title'],
                       text: noteData['content'],
+                      noteId: note.id, // Pass the noteId
+                      onDelete: _deleteNote,
+                      onEdit: _updateNote,
                     ));
                   }
                   return Column(
@@ -71,6 +89,7 @@ class _NoteInputFormState extends State<NoteInputForm> {
                   );
                 },
               ),
+
 
             ],
           ),
@@ -91,7 +110,6 @@ class _NoteInputFormState extends State<NoteInputForm> {
                 border: InputBorder.none,
               ),
               onChanged: (value) {
-                // Handle changes to the title here
               },
             ),
             SizedBox(height: 10),
@@ -123,7 +141,6 @@ class _NoteInputFormState extends State<NoteInputForm> {
                         _titleEditingController.clear();
                       });
                     } else {
-                      // Handle case when user is not authenticated
                     }
                   },
                   child: Text('+', style: TextStyle(fontSize: 40)),
@@ -176,12 +193,23 @@ class _TodoListFormState extends State<TodoListForm> {
       setState(() {
         _toDoList = querySnapshot.docs.map((doc) {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-          data['id'] = doc.id; // Add 'id' field to the data
+          data['id'] = doc.id;
           return data;
         }).toList();
       });
     }
   }
+  void _deleteToDoItem(String todoId) async {
+    await FirebaseFirestore.instance
+        .collection('todos')
+        .doc(todoId)
+        .delete();
+
+    setState(() {
+      _toDoList.removeWhere((item) => item['id'] == todoId);
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +224,7 @@ class _TodoListFormState extends State<TodoListForm> {
               width: 45,
               child: ClipRRect(
                 borderRadius: BorderRadius.zero,
-                child: Image.asset('assets/images/images.jpeg'), // Change the image path here
+                child: Image.asset('../assets/images.jpg'),
               ),
             ),
           ],
@@ -209,7 +237,7 @@ class _TodoListFormState extends State<TodoListForm> {
               Container(
                 margin: EdgeInsets.only(top: 50, bottom: 20),
                 child: Text(
-                  'To-do List', // Change the title here
+                  'To-do List',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w500,
@@ -224,15 +252,20 @@ class _TodoListFormState extends State<TodoListForm> {
                   return ToDoItem(
                     text: todo['task'] ?? '',
                     check: todo['complete'] ?? false,
+                    todoId: todo['id'],
                     onChanged: (value) {
                       setState(() {
                         todo['complete'] = value;
                         _updateToDoItem(todo);
                       });
                     },
+                    onDelete: _deleteToDoItem,
+                    onEdit: _editToDoItem,
                   );
                 },
               ),
+
+
             ],
           ),
         ),
@@ -292,6 +325,21 @@ class _TodoListFormState extends State<TodoListForm> {
       }
     }
   }
+  void _editToDoItem(String todoId, String newText) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final todoIndex = _toDoList.indexWhere((item) => item['id'] == todoId);
+      if (todoIndex != -1) {
+        await FirebaseFirestore.instance
+            .collection('todos')
+            .doc(todoId)
+            .update({'task': newText});
+        setState(() {
+          _toDoList[todoIndex]['task'] = newText;
+        });
+      }
+    }
+  }
 
   void _addToDoItem(Map<String, dynamic> todo) async {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -311,7 +359,15 @@ class _TodoListFormState extends State<TodoListForm> {
     }
   }
 }
-
+// void _deleteToDoItem(String todoId) async {
+//   await FirebaseFirestore.instance
+//       .collection('todos')
+//       .doc(todoId)
+//       .delete();
+//   setState(() {
+//     _toDoList.removeWhere((item) => item['id'] == todoId);
+//   });
+// }
 
 
 //
@@ -342,6 +398,7 @@ class NoteAndTodoApp extends StatelessWidget {
           child: Scaffold(
             appBar: AppBar(
               title: const Text('Note and Todo App'),
+              centerTitle: true, // Center the title
               bottom: const TabBar(
                 tabs: [
                   Tab(text: 'Notes'),
